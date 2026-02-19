@@ -1,50 +1,26 @@
-export default function App() {
+import React, { useState } from "https://esm.sh/react@18";
+import Login from "./Login.jsx";
 
-  function login(role){
-    alert("Login as: " + role);
+export default function App() {
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user"))
+  );
+
+  if (!user) {
+    return <Login onLogin={setUser} />;
   }
 
   return (
-    <div style={{
-      fontFamily:"Arial",
-      background:"#0f172a",
-      height:"100vh",
-      color:"white",
-      display:"flex",
-      justifyContent:"center",
-      alignItems:"center",
-      flexDirection:"column"
-    }}>
+    <div style={{ padding: 20 }}>
+      <h1>Welcome {user.name}</h1>
+      <p>Role: {user.role}</p>
 
-      <h1>Factory Production App</h1>
-      <p>Select Login Role</p>
-
-      <div style={{display:"flex",gap:"10px",marginTop:"20px"}}>
-
-        <button style={btn} onClick={()=>login("Operator")}>
-          Operator
-        </button>
-
-        <button style={btn} onClick={()=>login("Shift Incharge")}>
-          Shift Incharge
-        </button>
-
-        <button style={btn} onClick={()=>login("Planning Incharge")}>
-          Planning
-        </button>
-
-      </div>
-
+      <button onClick={() => {
+        localStorage.removeItem("user");
+        setUser(null);
+      }}>
+        Logout
+      </button>
     </div>
   );
 }
-
-const btn = {
-  padding:"15px 20px",
-  background:"#2563eb",
-  border:"none",
-  color:"white",
-  fontSize:"16px",
-  borderRadius:"10px",
-  cursor:"pointer"
-};
