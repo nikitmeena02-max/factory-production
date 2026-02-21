@@ -1,32 +1,75 @@
-import React, { useState, useEffect } from "https://esm.sh/react@18";
-import Login from "./Login.jsx";
+import { useState } from "react";
+import { supabase } from "./supabaseClient";
 
-import AdminPanel from "./panels/AdminPanel.jsx";
-import PlanningPanel from "./panels/PlanningPanel.jsx";
-import ShiftPanel from "./panels/ShiftPanel.jsx";
-import OperatorPanel from "./panels/OperatorPanel.jsx";
+import AdminPanel from "./pages/AdminPanel";
+import PlanningPanel from "./pages/PlanningPanel";
+import ShiftPanel from "./pages/ShiftPanel";
+import OperatorPanel from "./pages/OperatorPanel";
 
 export default function App() {
+
+  const [empCode, setEmpCode] = useState("");
+  const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
 
-  // auto login from storage
-  useEffect(() => {
-    const saved = localStorage.getItem("user");
-    if (saved) setUser(JSON.parse(saved));
-  }, []);
+  async function handleLogin() {
+    setError("");
 
-  function handleLogout() {
-    localStorage.removeItem("user");
-    setUser(null);
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("emp_code", empCode)
+      .eq("password", password)
+      .single();
+
+    if (error || !data) {
+      setError("Invalid Login");
+      return;
+    }
+
+    setUser(data);
   }
 
-  if (!user) return <Login onLogin={setUser} />;
+  function handleLogout() {
+    setUser(null);
+    setEmpCode("");
+    setPassword("");
+  }
 
-  // ROLE BASED SCREEN
+  // 🔐 LOGIN SCREEN
+  if (!user) {
+    return (
+      <div style={{ padding: 30 }}>
+        <h2>Factory ERP Login</h2>
+
+        <input
+          placeholder="Employee Code"
+          value={empCode}
+          onChange={(e) => setEmpCode(e.target.value)}
+        />
+        <br /><br />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <br /><br />
+
+        <button onClick={handleLogin}>Login</button>
+
+        <p style={{ color: "red" }}>{error}</p>
+      </div>
+    );
+  }
+
+  // 🧠 ROLE BASED ROUTING
   if (user.role === "admin")
     return <AdminPanel user={user} onLogout={handleLogout} />;
 
-  if (user.role === "planning")
+  if (user.role === "planning_ic")
     return <PlanningPanel user={user} onLogout={handleLogout} />;
 
   if (user.role === "shift_ic")
@@ -35,5 +78,5 @@ export default function App() {
   if (user.role === "operator")
     return <OperatorPanel user={user} onLogout={handleLogout} />;
 
-  return <div>Role not assigned</div>;
+  return <div>Invalid Role</div>;
 }
