@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { supabase } from "./supabaseClient";
 
-import AdminPanel from "./pages/AdminPanel";
-import PlanningPanel from "./pages/PlanningPanel";
-import ShiftPanel from "./pages/ShiftPanel";
-import OperatorPanel from "./pages/OperatorPanel";
+import AdminPanel from "./panels/AdminPanel";
+import PlanningPanel from "./panels/PlanningPanel";
+import ShiftPanel from "./panels/ShiftPanel";
+import OperatorPanel from "./panels/OperatorPanel";
 
 export default function App() {
 
