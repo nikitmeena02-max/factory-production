@@ -1,61 +1,106 @@
-import React, { useState } from "https://esm.sh/react@18";
+import React, { useEffect, useState } from "https://esm.sh/react@18";
 import { supabase } from "../supabaseClient.js";
 
 export default function AdminPanel({ user, onLogout }) {
 
-  const [emp_code, setEmp] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPass] = useState("");
-  const [role, setRole] = useState("operator");
-  const [msg, setMsg] = useState("");
+  const [tab, setTab] = useState("users");
+  const [users, setUsers] = useState([]);
+  const [prod, setProd] = useState([]);
 
-  async function createUser() {
-    setMsg("Saving...");
+  // load users
+  async function loadUsers() {
+    const { data } = await supabase.from("factory_users").select("*");
+    if (data) setUsers(data);
+  }
 
-    const { error } = await supabase.from("factory_users").insert([
-      { emp_code, name, password, role }
-    ]);
+  // load production
+  async function loadProduction() {
+    const { data } = await supabase
+      .from("production_entries")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) setProd(data);
+  }
 
-    if (error) {
-      setMsg("Error: " + error.message);
-      return;
-    }
+  useEffect(() => {
+    loadUsers();
+    loadProduction();
+  }, []);
 
-    setMsg("User Created Successfully ✅");
-    setEmp(""); setName(""); setPass("");
+  async function deleteUser(id) {
+    await supabase.from("factory_users").delete().eq("id", id);
+    loadUsers();
   }
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>Welcome {user.name}</h2>
-      <h3>Role: {user.role}</h3>
+      <h2>Admin Dashboard</h2>
+      <p>Welcome {user.name}</p>
+
+      <button onClick={() => setTab("users")}>Users</button>
+      <button onClick={() => setTab("production")}>Production</button>
 
       <hr/>
 
-      <h3>Create Employee</h3>
+      {tab === "users" && (
+        <>
+          <h3>Employee List</h3>
+          <table border="1" cellPadding="5">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td>{u.emp_code}</td>
+                  <td>{u.name}</td>
+                  <td>{u.role}</td>
+                  <td>
+                    <button onClick={() => deleteUser(u.id)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
 
-      <input placeholder="Employee Code"
-        value={emp_code} onChange={e=>setEmp(e.target.value)} /><br/><br/>
+      {tab === "production" && (
+        <>
+          <h3>All Production Entries</h3>
+          <table border="1" cellPadding="5">
+            <thead>
+              <tr>
+                <th>Emp</th>
+                <th>Order</th>
+                <th>Pipe</th>
+                <th>Length</th>
+                <th>Status</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {prod.map(p => (
+                <tr key={p.id}>
+                  <td>{p.emp_code}</td>
+                  <td>{p.order_no}</td>
+                  <td>{p.pipe_no}</td>
+                  <td>{p.length}</td>
+                  <td>{p.status}</td>
+                  <td>{new Date(p.created_at).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
 
-      <input placeholder="Name"
-        value={name} onChange={e=>setName(e.target.value)} /><br/><br/>
-
-      <input placeholder="Password"
-        value={password} onChange={e=>setPass(e.target.value)} /><br/><br/>
-
-      <select value={role} onChange={e=>setRole(e.target.value)}>
-        <option value="admin">Admin</option>
-        <option value="planning">Planning</option>
-        <option value="shift_ic">Shift IC</option>
-        <option value="operator">Operator</option>
-      </select>
-
-      <br/><br/>
-      <button onClick={createUser}>Create User</button>
-
-      <p>{msg}</p>
-
-      <hr/>
+      <br/>
       <button onClick={onLogout}>Logout</button>
     </div>
   );
