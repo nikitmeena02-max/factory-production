@@ -1,26 +1,39 @@
-import React, { useState } from "https://esm.sh/react@18";
+import React, { useState, useEffect } from "https://esm.sh/react@18";
 import Login from "./Login.jsx";
 
-export default function App() {
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user"))
-  );
+import AdminPanel from "./panels/AdminPanel.jsx";
+import PlanningPanel from "./panels/PlanningPanel.jsx";
+import ShiftPanel from "./panels/ShiftPanel.jsx";
+import OperatorPanel from "./panels/OperatorPanel.jsx";
 
-  if (!user) {
-    return <Login onLogin={setUser} />;
+export default function App() {
+  const [user, setUser] = useState(null);
+
+  // auto login from storage
+  useEffect(() => {
+    const saved = localStorage.getItem("user");
+    if (saved) setUser(JSON.parse(saved));
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem("user");
+    setUser(null);
   }
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>Welcome {user.name}</h1>
-      <p>Role: {user.role}</p>
+  if (!user) return <Login onLogin={setUser} />;
 
-      <button onClick={() => {
-        localStorage.removeItem("user");
-        setUser(null);
-      }}>
-        Logout
-      </button>
-    </div>
-  );
+  // ROLE BASED SCREEN
+  if (user.role === "admin")
+    return <AdminPanel user={user} onLogout={handleLogout} />;
+
+  if (user.role === "planning")
+    return <PlanningPanel user={user} onLogout={handleLogout} />;
+
+  if (user.role === "shift_ic")
+    return <ShiftPanel user={user} onLogout={handleLogout} />;
+
+  if (user.role === "operator")
+    return <OperatorPanel user={user} onLogout={handleLogout} />;
+
+  return <div>Role not assigned</div>;
 }
