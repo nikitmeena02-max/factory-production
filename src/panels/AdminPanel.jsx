@@ -1,107 +1,128 @@
-import React, { useEffect, useState } from "https://esm.sh/react@18";
-import { supabase } from "../supabaseClient.js";
+import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
 
-export default function AdminPanel({ user, onLogout }) {
+export default function AdminPanel() {
 
-  const [tab, setTab] = useState("users");
-  const [users, setUsers] = useState([]);
-  const [prod, setProd] = useState([]);
+const [tab,setTab]=useState("users");
+const [users,setUsers]=useState([]);
+const [stations,setStations]=useState([]);
+const [orders,setOrders]=useState([]);
 
-  // load users
-  async function loadUsers() {
-    const { data } = await supabase.from("factory_users").select("*");
-    if (data) setUsers(data);
-  }
+const [emp,setEmp]=useState("");
+const [name,setName]=useState("");
+const [role,setRole]=useState("operator");
+const [pass,setPass]=useState("");
 
-  // load production
-  async function loadProduction() {
-    const { data } = await supabase
-      .from("production_entries")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (data) setProd(data);
-  }
+const [station,setStation]=useState("");
+const [process,setProcess]=useState("");
 
-  useEffect(() => {
-    loadUsers();
-    loadProduction();
-  }, []);
+const [ord,setOrd]=useState("");
+const [size,setSize]=useState("");
+const [mat,setMat]=useState("");
+const [qty,setQty]=useState("");
+const [pic,setPic]=useState("");
 
-  async function deleteUser(id) {
-    await supabase.from("factory_users").delete().eq("id", id);
-    loadUsers();
-  }
+useEffect(()=>{
+loadUsers();
+loadStations();
+loadOrders();
+},[]);
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Admin Dashboard</h2>
-      <p>Welcome {user.name}</p>
+async function loadUsers(){
+let {data}=await supabase.from("users").select("*");
+setUsers(data||[]);
+}
 
-      <button onClick={() => setTab("users")}>Users</button>
-      <button onClick={() => setTab("production")}>Production</button>
+async function loadStations(){
+let {data}=await supabase.from("stations").select("*");
+setStations(data||[]);
+}
 
-      <hr/>
+async function loadOrders(){
+let {data}=await supabase.from("production_orders").select("*");
+setOrders(data||[]);
+}
 
-      {tab === "users" && (
-        <>
-          <h3>Employee List</h3>
-          <table border="1" cellPadding="5">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Delete</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id}>
-                  <td>{u.emp_code}</td>
-                  <td>{u.name}</td>
-                  <td>{u.role}</td>
-                  <td>
-                    <button onClick={() => deleteUser(u.id)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
+async function addUser(){
+await supabase.from("users").insert({emp_code:emp,name,role,password:pass});
+loadUsers();
+}
 
-      {tab === "production" && (
-        <>
-          <h3>All Production Entries</h3>
-          <table border="1" cellPadding="5">
-            <thead>
-              <tr>
-                <th>Emp</th>
-                <th>Order</th>
-                <th>Pipe</th>
-                <th>Length</th>
-                <th>Status</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prod.map(p => (
-                <tr key={p.id}>
-                  <td>{p.emp_code}</td>
-                  <td>{p.order_no}</td>
-                  <td>{p.pipe_no}</td>
-                  <td>{p.length}</td>
-                  <td>{p.status}</td>
-                  <td>{new Date(p.created_at).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
+async function addStation(){
+await supabase.from("stations").insert({station_name:station,process});
+loadStations();
+}
 
-      <br/>
-      <button onClick={onLogout}>Logout</button>
-    </div>
-  );
+async function addOrder(){
+await supabase.from("production_orders").insert({
+order_no:ord,pipe_size:size,material:mat,qty,planning_ic:pic
+});
+loadOrders();
+}
+
+return (
+<div>
+
+<h2>Admin Dashboard</h2>
+
+<button onClick={()=>setTab("users")}>Users</button>
+<button onClick={()=>setTab("stations")}>Stations</button>
+<button onClick={()=>setTab("orders")}>Orders</button>
+
+<hr/>
+
+{tab==="users" && (
+<div>
+<h3>Create Employee</h3>
+<input placeholder="Code" onChange={e=>setEmp(e.target.value)} />
+<input placeholder="Name" onChange={e=>setName(e.target.value)} />
+<select onChange={e=>setRole(e.target.value)}>
+<option>admin</option>
+<option>planning_ic</option>
+<option>shift_ic</option>
+<option>operator</option>
+</select>
+<input placeholder="Password" onChange={e=>setPass(e.target.value)} />
+<button onClick={addUser}>Add</button>
+
+<h3>Employee List</h3>
+{users.map(u=>(
+<div key={u.id}>{u.emp_code} - {u.name} ({u.role})</div>
+))}
+</div>
+)}
+
+{tab==="stations" && (
+<div>
+<h3>Add Station</h3>
+<input placeholder="Station" onChange={e=>setStation(e.target.value)} />
+<input placeholder="Process" onChange={e=>setProcess(e.target.value)} />
+<button onClick={addStation}>Add</button>
+
+<h3>Stations</h3>
+{stations.map(s=>(
+<div key={s.id}>{s.station_name} - {s.process}</div>
+))}
+</div>
+)}
+
+{tab==="orders" && (
+<div>
+<h3>Create Order</h3>
+<input placeholder="Order No" onChange={e=>setOrd(e.target.value)} />
+<input placeholder="Pipe Size" onChange={e=>setSize(e.target.value)} />
+<input placeholder="Material" onChange={e=>setMat(e.target.value)} />
+<input placeholder="Qty" onChange={e=>setQty(e.target.value)} />
+<input placeholder="Planning IC" onChange={e=>setPic(e.target.value)} />
+<button onClick={addOrder}>Create</button>
+
+<h3>Orders</h3>
+{orders.map(o=>(
+<div key={o.id}>{o.order_no} | {o.pipe_size} | {o.qty}</div>
+))}
+</div>
+)}
+
+</div>
+);
 }
